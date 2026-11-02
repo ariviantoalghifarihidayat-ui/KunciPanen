@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>KunciPanen — Prototype</title>
+<meta name="description" content="Prototype KunciPanen: platform kontrak harga di muka untuk bahan baku kuliner. Harga bahan baku dikunci, panen petani terjamin.">
+<meta name="theme-color" content="#0F3D2E">
+<link rel="icon" href="maskot.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFF8EC; --bg2:#FDF1DA; --surface:#FFFFFF; --ink:#10261D; --muted:#5E6F66; --line:#EFE4CD;
+  --green:#1F8A4C; --green-d:#0F3D2E; --leaf:#4CC27A; --mint:#E3F5EA;
+  --gold:#F2B33D; --gold-d:#B8760C; --cream-gold:#FFF0CF; --chili:#E2483D; --chili-soft:#FDE6E3;
+  --r:22px; --shadow:0 1px 0 rgba(16,38,29,.04),0 14px 34px -16px rgba(16,38,29,.28);
+  --ease:cubic-bezier(.2,.8,.2,1); --spring:cubic-bezier(.34,1.56,.64,1);
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100dvh;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+img{display:block;max-width:100%}
+h1,h2,h3{letter-spacing:-.02em;line-height:1.15}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:99px;background:var(--mint);color:var(--green);white-space:nowrap}
+.tag.gold{background:var(--cream-gold);color:var(--gold-d)}
+.tag.red{background:var(--chili-soft);color:var(--chili)}
+.tag.dark{background:rgba(255,255,255,.14);color:#fff}
+
+/* ---------- latar bergerak ---------- */
+.blobs{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.blobs i{position:absolute;border-radius:50%;filter:blur(60px);opacity:.55;animation:drift 18s ease-in-out infinite alternate}
+.blobs i:nth-child(1){width:46vmax;height:46vmax;background:#D8F1E1;left:-12vmax;top:-14vmax}
+.blobs i:nth-child(2){width:38vmax;height:38vmax;background:#FFE3A6;right:-14vmax;top:20vh;animation-delay:-6s}
+.blobs i:nth-child(3){width:30vmax;height:30vmax;background:#FFD5CC;left:20vw;bottom:-16vmax;animation-delay:-11s;opacity:.35}
+@keyframes drift{to{transform:translate(6vmax,5vmax) scale(1.12)}}
+
+/* ---------- splash ---------- */
+#splash{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:radial-gradient(120% 90% at 50% 10%,#1C6B47 0%,#0F3D2E 55%,#082219 100%);color:#fff;transition:opacity .6s var(--ease),visibility .6s}
+#splash.hide{opacity:0;visibility:hidden}
+.splash-in{display:flex;flex-direction:column;align-items:center;gap:18px}
+.splash-in .mascot{width:170px;animation:drop .9s var(--spring) both}
+.splash-logo{background:#FFF8EC;border-radius:18px;padding:10px 16px;animation:fadeUp .7s .35s var(--ease) both}
+.splash-logo img{height:44px}
+.loadbar{width:180px;height:6px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden;animation:fadeUp .6s .5s both}
+.loadbar b{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--leaf),var(--gold));border-radius:9px;animation:load 1.5s .6s var(--ease) forwards}
+.splash-in p{font-size:13px;opacity:.75;animation:fadeUp .6s .6s both}
+@keyframes drop{0%{transform:translateY(-120px) scale(.6);opacity:0}100%{transform:none;opacity:1}}
+@keyframes load{to{width:100%}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ---------- onboarding ---------- */
+#onboard{position:fixed;inset:0;z-index:90;overflow:auto;display:flex;align-items:center;justify-content:center;padding:28px 16px;background:var(--bg);transition:opacity .5s,transform .6s var(--ease)}
+#onboard.hide{opacity:0;transform:scale(1.04);pointer-events:none;visibility:hidden}
+.ob{width:100%;max-width:980px;display:grid;gap:28px;align-items:center}
+.ob-hero{display:flex;flex-direction:column;align-items:flex-start;gap:14px}
+.ob-hero .logo{height:42px}
+.ob-hero h1{font-size:clamp(30px,6vw,52px);font-weight:800}
+.ob-hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--green),var(--leaf));-webkit-background-clip:text;background-clip:text;color:transparent}
+.ob-hero h1 span{position:relative;white-space:nowrap}
+.ob-hero h1 span::after{content:"";position:absolute;left:0;right:0;bottom:2px;height:10px;background:var(--gold);opacity:.45;border-radius:6px;z-index:-1;transform-origin:left;animation:mark 1s 1.2s var(--ease) both}
+@keyframes mark{from{transform:scaleX(0)}}
+.ob-hero p{color:var(--muted);font-size:15.5px;line-height:1.6;max-width:46ch}
+.ob-mascot{display:flex;align-items:flex-end;gap:10px}
+.ob-mascot img{width:96px;animation:float 3.4s ease-in-out infinite}
+.bubble{background:#fff;border-radius:18px 18px 18px 4px;padding:12px 14px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow);max-width:250px;animation:pop .6s 1s var(--spring) both}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes pop{from{opacity:0;transform:scale(.7) translateY(10px)}}
+.roles{display:grid;gap:12px}
+.roles h2{font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.role{display:flex;align-items:center;gap:14px;text-align:left;background:#fff;padding:16px;border-radius:20px;box-shadow:var(--shadow);border:2px solid transparent;transition:transform .35s var(--spring),border-color .25s,box-shadow .3s;animation:fadeUp .6s calc(.15s * var(--i) + .2s) var(--ease) both}
+.role:hover{transform:translateY(-3px);border-color:var(--leaf)}
+.role:active{transform:scale(.98)}
+.role .ic{width:54px;height:54px;flex:none;border-radius:16px;display:grid;place-items:center;font-size:26px}
+.role b{display:block;font-size:16px}
+.role small{color:var(--muted);font-size:13px;line-height:1.45}
+.role .go{margin-left:auto;width:34px;height:34px;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--mint);color:var(--green);transition:transform .3s var(--spring)}
+.role:hover .go{transform:translateX(4px)}
+@media(min-width:900px){.ob{grid-template-columns:1.1fr 1fr;gap:56px}}
+
+/* ---------- kerangka app ---------- */
+.app{min-height:100dvh;opacity:0;transition:opacity .5s}
+.app.on{opacity:1}
+.sidebar{display:none}
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));background:rgba(255,248,236,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(239,228,205,.7)}
+.topbar .logo{height:30px}
+.topbar h1{display:none;font-size:22px;font-weight:800}
+.city{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;background:#fff;padding:7px 11px;border-radius:99px;box-shadow:0 2px 10px -4px rgba(0,0,0,.15)}
+.city i{width:7px;height:7px;border-radius:50%;background:var(--leaf);box-shadow:0 0 0 0 rgba(76,194,122,.6);animation:ping 1.8s infinite}
+@keyframes ping{70%{box-shadow:0 0 0 8px rgba(76,194,122,0)}100%{box-shadow:0 0 0 0 rgba(76,194,122,0)}}
+.iconbtn{position:relative;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#fff;box-shadow:0 2px 10px -4px rgba(0,0,0,.15);transition:transform .3s var(--spring)}
+.iconbtn:active{transform:scale(.9)}
+.iconbtn .dot{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--chili);border:2px solid #fff}
+.avatar{font-size:20px}
+main{padding:16px 16px 120px;max-width:1180px;margin:0 auto}
+#view{display:grid;gap:16px}
+.rise{animation:fadeUp .6s calc(var(--i,0) * 70ms) var(--ease) both}
+
+/* nav bawah */
+.bnav{position:fixed;z-index:40;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));display:flex;justify-content:space-around;padding:8px;border-radius:24px;background:rgba(255,255,255,.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 18px 40px -16px rgba(16,38,29,.4),0 0 0 1px rgba(239,228,205,.8)}
+.bnav .pill{position:absolute;top:8px;bottom:8px;left:0;border-radius:18px;background:var(--green-d);transition:transform .5s var(--spring),width .4s var(--ease);z-index:0}
+.nb{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px;font-size:10.5px;font-weight:700;color:var(--muted);transition:color .3s}
+.nb svg{width:22px;height:22px;transition:transform .4s var(--spring)}
+.nb.on{color:#fff}
+.nb.on svg{transform:translateY(-1px) scale(1.08)}
+
+@media(min-width:980px){
+  .app{display:grid;grid-template-columns:268px 1fr}
+  .sidebar{display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100dvh;padding:24px 18px;background:rgba(255,255,255,.6);backdrop-filter:blur(14px);border-right:1px solid var(--line)}
+  .sidebar .logo{height:38px;margin:0 6px 22px}
+  .sb{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;font-weight:700;font-size:14.5px;color:var(--muted);transition:background .25s,color .25s,transform .3s var(--spring)}
+  .sb svg{width:20px;height:20px}
+  .sb:hover{background:rgba(31,138,76,.07);color:var(--ink);transform:translateX(3px)}
+  .sb.on{background:var(--green-d);color:#fff}
+  .sb-role{margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px;border-radius:16px;background:#fff;box-shadow:var(--shadow);text-align:left}
+  .sb-role .avatar{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--mint)}
+  .sb-role small{display:block;color:var(--muted);font-size:12px}
+  .sb-mascot{position:relative;margin:10px 0;padding:14px 14px 14px 88px;border-radius:18px;background:linear-gradient(135deg,#FFF0CF,#FFE1A0);font-size:12.5px;font-weight:600;line-height:1.45;min-height:84px}
+  .sb-mascot img{position:absolute;left:6px;bottom:4px;width:76px;animation:float 3.4s ease-in-out infinite}
+  .topbar{padding:20px 32px;background:transparent;border:0;backdrop-filter:none}
+  .topbar .logo{display:none}
+  .topbar h1{display:block}
+  main{padding:4px 32px 48px}
+  .bnav{display:none}
+}
+
+/* ---------- kartu & komponen ---------- */
+.card{background:var(--surface);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);border:1px solid rgba(239,228,205,.75);position:relative}
+.card h3{font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px}
+.card .sub{font-size:12.5px;color:var(--muted);margin-top:3px}
+.row{display:flex;align-items:center;gap:10px}
+.between{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.grid{display:grid;gap:16px}
+.pair{grid-template-columns:1fr 1fr;gap:10px}.trio{grid-template-columns:repeat(3,1fr);gap:10px}.trio .stat b{font-size:18px}.pair .stat b{font-size:16px}
+@media(min-width:760px){.grid-2{grid-template-columns:1.25fr 1fr}.grid-2e{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:repeat(3,1fr)}}
+.hello h2{font-size:clamp(22px,4vw,30px);font-weight:800}
+.hello p{color:var(--muted);font-size:14px;margin-top:4px}
+
+.hero{background:radial-gradient(120% 140% at 100% 0%,#2FA463 0%,#16674A 38%,#0F3D2E 80%);color:#fff;overflow:hidden;border:0;min-height:210px}
+.hero .ring{position:absolute;border-radius:50%;border:1.5px dashed rgba(255,255,255,.18);animation:spin 40s linear infinite}
+.hero .ring.a{width:300px;height:300px;right:-90px;top:-120px}
+.hero .ring.b{width:180px;height:180px;right:-30px;top:-60px;animation-direction:reverse;border-color:rgba(242,179,61,.35)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hero .big{font-size:clamp(30px,6vw,42px);font-weight:800;letter-spacing:-.03em;margin:6px 0 2px}
+.hero small{opacity:.8;font-size:13px}
+.hero .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.hero .mini-m{position:absolute;right:10px;bottom:-6px;width:96px;animation:float 3.6s ease-in-out infinite}
+.spark{position:absolute;right:14px;top:16px;width:120px;height:44px;opacity:.9}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border-radius:15px;font-weight:800;font-size:14.5px;background:var(--green-d);color:#fff;transition:transform .3s var(--spring),box-shadow .3s,filter .2s;position:relative;overflow:hidden;box-shadow:0 10px 22px -10px rgba(15,61,46,.7)}
+.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn:active{transform:scale(.96)}
+.btn.gold{background:linear-gradient(135deg,#FFC54D,#EE9F1F);color:#3A2500;box-shadow:0 10px 22px -10px rgba(238,159,31,.8)}
+.btn.ghost{background:var(--mint);color:var(--green);box-shadow:none}
+.btn.block{width:100%}
+.btn svg{width:18px;height:18px}
+.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.45);transform:scale(0);animation:rip .6s ease-out;pointer-events:none}
+@keyframes rip{to{transform:scale(4);opacity:0}}
+
+/* ticker */
+.ticker{overflow:hidden;border-radius:18px;background:var(--green-d);color:#fff;padding:12px 0;-webkit-mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.ticker .track{display:flex;gap:28px;width:max-content;animation:marq 32s linear infinite}
+.ticker:hover .track{animation-play-state:paused}
+.tk{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;white-space:nowrap}
+.tk b{font-weight:800}
+.up{color:#FF8E84}.down{color:#7FE0A4}
+@keyframes marq{to{transform:translateX(-50%)}}
+
+/* chart */
+.chart{width:100%;height:auto;overflow:visible;margin-top:10px;touch-action:pan-y}
+.chart .draw{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 1.8s .2s var(--ease) forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);font-weight:600;margin-top:8px}
+.legend i{display:inline-block;width:14px;height:4px;border-radius:3px;margin-right:6px;vertical-align:middle}
+.tip-box{position:absolute;pointer-events:none;background:var(--ink);color:#fff;font-size:12px;padding:8px 10px;border-radius:10px;opacity:0;transition:opacity .2s;white-space:nowrap;transform:translate(-50%,-110%)}
+
+/* list bahan */
+.items{display:grid;gap:10px;margin-top:12px}
+.item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:16px;background:var(--bg);transition:transform .3s var(--spring)}
+.item:hover{transform:translateX(3px)}
+.emo{width:42px;height:42px;flex:none;border-radius:13px;display:grid;place-items:center;font-size:22px;background:#fff;box-shadow:0 4px 12px -6px rgba(0,0,0,.2)}
+.item .t{flex:1;min-width:0}
+.item .t b{display:block;font-size:14px}
+.item .t small{font-size:12px;color:var(--muted)}
+.price{text-align:right;font-size:13px}
+.price b{display:block;font-size:14.5px}
+.price s{color:var(--muted);font-size:12px}
+.lockic{width:16px;height:16px;color:var(--green)}
+
+.tipcard{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#FFF0CF,#FFE3A6);border:0}
+.tipcard img{width:82px;flex:none;animation:float 3.4s ease-in-out infinite}
+.tipcard p{font-size:14px;font-weight:600;line-height:1.5}
+.tipcard .btn{margin-top:10px;padding:10px 14px;font-size:13px}
+
+/* keranjang */
+.picks{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+@media(min-width:620px){.picks{grid-template-columns:repeat(3,1fr)}}
+.pick{position:relative;text-align:left;padding:14px;border-radius:18px;background:var(--bg);border:2px solid transparent;transition:transform .35s var(--spring),border-color .25s,background .25s}
+.pick:hover{transform:translateY(-2px)}
+.pick.on{border-color:var(--green);background:var(--mint)}
+.pick .emo{margin-bottom:10px}
+.pick b{display:block;font-size:13.5px;line-height:1.3}
+.pick small{display:block;font-size:11.5px;color:var(--muted);margin-top:4px}
+.pick .chk{position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;background:#fff;transition:all .3s var(--spring)}
+.pick.on .chk{background:var(--green);border-color:var(--green);transform:rotate(360deg)}
+.pick .chk svg{width:14px;height:14px;color:#fff;opacity:0;transition:opacity .2s}
+.pick.on .chk svg{opacity:1}
+.step{display:inline-flex;align-items:center;background:#fff;border-radius:12px;box-shadow:0 2px 8px -4px rgba(0,0,0,.2)}
+.step button{width:32px;height:32px;font-size:18px;font-weight:800;color:var(--green)}
+.step span{min-width:56px;text-align:center;font-weight:800;font-size:13px}
+.sel{display:grid;gap:10px;margin-top:12px}
+.sel .item{animation:fadeUp .4s var(--ease) both}
+.range{width:100%;-webkit-appearance:none;appearance:none;height:8px;border-radius:9px;background:linear-gradient(90deg,var(--green) var(--p,50%),#EADFC8 var(--p,50%));outline:none;margin:14px 0 6px}
+.range::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;border:6px solid var(--green);box-shadow:0 4px 12px -2px rgba(15,61,46,.45);cursor:grab;transition:transform .2s}
+.range::-webkit-slider-thumb:active{transform:scale(1.15)}
+.range::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:6px solid var(--green);cursor:grab}
+.sumrow{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.sumrow:last-of-type{border:0}
+.sumrow b{font-weight:800}
+.total{display:flex;justify-content:space-between;align-items:flex-end;margin:12px 0 14px;padding:14px;border-radius:16px;background:var(--green-d);color:#fff}
+.total b{font-size:22px;font-weight:800}
+@media(min-width:980px){.sticky{position:sticky;top:20px;align-self:start}}
+.minibar{position:fixed;z-index:35;left:16px;right:16px;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 82px);display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;border-radius:18px;background:var(--ink);color:#fff;box-shadow:0 16px 30px -12px rgba(0,0,0,.5);transform:translateY(160%);transition:transform .5s var(--spring)}
+.minibar.show{transform:none}
+.minibar small{display:block;opacity:.7;font-size:11.5px}
+.minibar .btn{margin-left:auto;padding:10px 14px;font-size:13px}
+@media(min-width:980px){.minibar{display:none}}
+
+/* pita harga */
+.seg{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{white-space:nowrap;padding:9px 13px;border-radius:99px;background:#fff;font-weight:700;font-size:13px;box-shadow:0 2px 8px -4px rgba(0,0,0,.2);transition:all .3s var(--spring)}
+.seg button.on{background:var(--green-d);color:#fff;transform:scale(1.04)}
+.bigs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.bigs > div{padding:14px;border-radius:18px;background:var(--bg)}
+.bigs small{font-size:12px;color:var(--muted);font-weight:600}
+.bigs b{display:block;font-size:clamp(20px,4.5vw,28px);font-weight:800;letter-spacing:-.02em;margin-top:2px;transition:color .3s}
+.bigs .k b{color:var(--green)}
+.scale{position:relative;height:74px;margin:22px 6px 6px}
+.scale .bar{position:absolute;left:0;right:0;top:32px;height:12px;border-radius:9px;background:linear-gradient(90deg,#FFD5CC,#FBE7C3 30%,#FBE7C3 70%,#FFD5CC)}
+.scale .band{position:absolute;top:24px;height:28px;border-radius:9px;background:repeating-linear-gradient(135deg,rgba(31,138,76,.25) 0 6px,rgba(31,138,76,.12) 6px 12px);border:2px solid var(--green);transition:left .5s var(--ease),width .5s var(--ease)}
+.scale .mk{position:absolute;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;transition:left .45s var(--spring)}
+.scale .mk span{font-size:11px;font-weight:800;padding:3px 7px;border-radius:8px;white-space:nowrap}
+.scale .mk i{width:3px;height:30px;border-radius:2px;margin-top:2px}
+.mk.m span{background:var(--chili);color:#fff}.mk.m i{background:var(--chili)}
+.mk.c{top:auto;bottom:-8px;flex-direction:column-reverse}
+.mk.c span{background:var(--green);color:#fff}.mk.c i{background:var(--green);height:22px;margin:0 0 2px}
+.scale .lab{position:absolute;top:56px;font-size:10.5px;color:var(--muted);font-weight:700;transform:translateX(-50%)}
+.impact{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+.imp{padding:16px;border-radius:20px;color:#fff;overflow:hidden;position:relative;transition:background .4s}
+.imp .e{font-size:28px}
+.imp small{display:block;opacity:.85;font-size:12px;font-weight:600;margin-top:6px}
+.imp b{display:block;font-size:clamp(17px,3.6vw,22px);font-weight:800;margin-top:2px}
+.imp p{font-size:12px;opacity:.9;margin-top:4px;line-height:1.4}
+.imp.g{background:linear-gradient(140deg,#2FA463,#0F3D2E)}
+.imp.o{background:linear-gradient(140deg,#F2B33D,#C26E0A)}
+.imp.r{background:linear-gradient(140deg,#F06A5E,#B2271E)}
+.imp.n{background:linear-gradient(140deg,#7C8C83,#3F4E46)}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+th{text-align:left;font-size:11.5px;color:var(--muted);font-weight:700;padding:8px 6px;border-bottom:1px solid var(--line)}
+td{padding:10px 6px;border-bottom:1px dashed var(--line)}
+tr.click{cursor:pointer;transition:background .2s}
+tr.click:hover{background:var(--bg)}
+tr.on{background:var(--mint)}
+
+/* patungan */
+.net{width:100%;height:auto}
+.flow{stroke-dasharray:6 10;animation:flow 1.2s linear infinite}
+.flow.rev{animation-direction:reverse}
+@keyframes flow{to{stroke-dashoffset:-32}}
+.node{animation:pulse 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes pulse{50%{transform:scale(1.08)}}
+.lot{padding:14px;border-radius:18px;background:var(--bg);display:grid;gap:10px}
+.prog{height:12px;border-radius:9px;background:#EADFC8;overflow:hidden;position:relative}
+.prog b{position:absolute;inset:0 auto 0 0;width:0;border-radius:9px;background:linear-gradient(90deg,var(--leaf),var(--green));transition:width 1.2s var(--ease)}
+.prog b::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);animation:shine 2s infinite;transform:translateX(-100%)}
+@keyframes shine{to{transform:translateX(100%)}}
+.faces{display:flex}
+.faces span{width:26px;height:26px;border-radius:50%;border:2px solid #fff;margin-left:-8px;display:grid;place-items:center;font-size:12px;background:var(--cream-gold)}
+.faces span:first-child{margin-left:0}
+
+/* kontrak */
+.ct{cursor:pointer}
+.ct .head{display:flex;align-items:center;gap:12px}
+.ct .chev{margin-left:auto;transition:transform .4s var(--spring)}
+.ct.open .chev{transform:rotate(180deg)}
+.ct .body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .5s var(--ease)}
+.ct.open .body{grid-template-rows:1fr}
+.ct .body > div{overflow:hidden}
+.tl{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:18px 0 6px;position:relative}
+.tl::before{content:"";position:absolute;top:15px;left:10%;right:10%;height:3px;background:var(--line)}
+.tl .fill{position:absolute;top:15px;left:10%;height:3px;background:var(--green);transition:width 1s var(--ease)}
+.tl div{position:relative;text-align:center;font-size:10.5px;font-weight:700;color:var(--muted);line-height:1.3}
+.tl div i{display:grid;place-items:center;width:32px;height:32px;margin:0 auto 6px;border-radius:50%;background:#fff;border:3px solid var(--line);font-style:normal;font-size:13px;position:relative;z-index:1}
+.tl div.done i{background:var(--green);border-color:var(--green);color:#fff}
+.tl div.now i{border-color:var(--gold);background:var(--cream-gold);animation:ring 1.6s infinite}
+.tl div.now{color:var(--ink)}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(242,179,61,.6)}100%{box-shadow:0 0 0 12px rgba(242,179,61,0)}}
+.route{width:100%;height:auto;margin-top:8px}
+.split{display:flex;height:16px;border-radius:9px;overflow:hidden;margin:10px 0 8px}
+.split i{height:100%;width:0;transition:width 1.2s var(--ease)}
+.keys{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;font-weight:600;color:var(--muted)}
+.keys i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.stat{padding:14px;border-radius:18px;background:var(--bg)}
+.stat small{font-size:12px;color:var(--muted);font-weight:600}
+.stat b{display:block;font-size:20px;font-weight:800;margin-top:2px}
+
+/* agen */
+.stops{display:grid;gap:0;margin-top:12px}
+.stop{display:flex;gap:12px;align-items:flex-start;padding:10px 0;position:relative}
+.stop::before{content:"";position:absolute;left:15px;top:40px;bottom:-6px;width:2px;background:var(--line)}
+.stop:last-child::before{display:none}
+.stop .dotx{width:32px;height:32px;flex:none;border-radius:50%;display:grid;place-items:center;background:#fff;border:3px solid var(--line);font-size:13px;transition:all .4s var(--spring);cursor:pointer}
+.stop.done .dotx{background:var(--green);border-color:var(--green);color:#fff}
+.stop b{font-size:14px;display:block}
+.stop small{color:var(--muted);font-size:12.5px}
+.stop .tm{margin-left:auto;font-size:12px;font-weight:800;color:var(--gold-d)}
+
+/* modal kunci */
+.modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:16px;background:rgba(8,34,25,.55);backdrop-filter:blur(6px);opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
+.modal.show{opacity:1;visibility:visible}
+.modal .box{width:100%;max-width:400px;background:#fff;border-radius:28px;padding:26px 22px 20px;text-align:center;transform:translateY(30px) scale(.94);transition:transform .5s var(--spring)}
+.modal.show .box{transform:none}
+.biglock{width:120px;height:120px;margin:0 auto 6px}
+.biglock .shk{transition:transform .5s var(--spring) .45s;transform:translateY(-16px)}
+.modal.show .biglock .shk{transform:none}
+.biglock .bd{transform-origin:60px 80px;animation:none}
+.modal.show .biglock .bd{animation:thunk .5s .9s var(--spring)}
+@keyframes thunk{40%{transform:scale(1.08,.92)}}
+.modal h2{font-size:24px;font-weight:800}
+.modal p{color:var(--muted);font-size:14px;line-height:1.5;margin:8px 0 16px}
+.modal .meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;text-align:left}
+.modal .meta div{background:var(--bg);border-radius:14px;padding:10px 12px;font-size:12px;color:var(--muted);font-weight:600}
+.modal .meta b{display:block;color:var(--ink);font-size:14px}
+.sheet{position:fixed;inset:0;z-index:85;background:rgba(8,34,25,.45);opacity:0;visibility:hidden;transition:.3s}
+.sheet.show{opacity:1;visibility:visible}
+.sheet .pane{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:var(--bg);border-radius:28px 28px 0 0;padding:12px 16px calc(20px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .5s var(--spring);display:grid;gap:10px}
+.sheet.show .pane{transform:none}
+.grab{width:44px;height:5px;border-radius:5px;background:#D9CDB3;margin:0 auto 6px}
+@media(min-width:980px){.sheet .pane{bottom:auto;top:50%;border-radius:28px;transform:translateY(-40%) scale(.95);opacity:0;transition:all .45s var(--spring)}.sheet.show .pane{transform:translateY(-50%);opacity:1}}
+
+/* toast */
+#toasts{position:fixed;z-index:95;top:max(14px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:grid;gap:8px;width:min(92vw,380px)}
+.toast{display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;padding:12px 14px;border-radius:16px;font-size:13.5px;font-weight:600;box-shadow:0 14px 30px -10px rgba(0,0,0,.45);animation:tin .5s var(--spring) both}
+.toast.out{animation:tout .35s forwards}
+@keyframes tin{from{transform:translateY(-30px) scale(.9);opacity:0}}
+@keyframes tout{to{transform:translateY(-20px);opacity:0}}
+#confetti{position:fixed;inset:0;z-index:99;pointer-events:none}
+.foot{font-size:11.5px;color:var(--muted);text-align:center;line-height:1.6;padding:10px 0 0}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="blobs" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-in">
+    <img class="mascot" src="maskot.svg" alt="Kupa, maskot KunciPanen">
+    <div class="splash-logo"><img src="logo.svg" alt="KunciPanen"></div>
+    <div class="loadbar"><b></b></div>
+    <p>Mengunci harga terbaik untukmu…</p>
+  </div>
+</div>
+
+<!-- ONBOARDING -->
+<section id="onboard" aria-label="Pilih peran">
+  <div class="ob">
+    <div class="ob-hero">
+      <img class="logo" src="logo.svg" alt="KunciPanen">
+      <h1>Harga bahan baku <em>dikunci</em>,<br><span>panen petani</span> terjamin.</h1>
+      <p>Kontrak harga di muka untuk restoran, coffee shop, katering, dan bakery — dipasok langsung kelompok tani lewat Agen Mitra. Satu keranjang, satu tagihan, harga pasti 1–6 bulan.</p>
+      <div class="ob-mascot">
+        <img src="maskot.svg" alt="">
+        <div class="bubble">Halo, aku <b>Kupa</b>! 👋 Masuk sebagai siapa hari ini?</div>
+      </div>
+    </div>
+    <div class="roles">
+      <h2>Masuk sebagai</h2>
+      <button class="role" style="--i:1" data-role="kuliner">
+        <span class="ic" style="background:#FFF0CF">🍛</span>
+        <span><b>Usaha Kuliner</b><small>Rumah makan, coffee shop, katering, bakery — kunci harga bahan utama.</small></span>
+        <span class="go">→</span>
+      </button>
+      <button class="role" style="--i:2" data-role="petani">
+        <span class="ic" style="background:#E3F5EA">🧑‍🌾</span>
+        <span><b>Petani & Peternak</b><small>Harga lantai + bagi naik, pembeli pasti sebelum panen.</small></span>
+        <span class="go">→</span>
+      </button>
+      <button class="role" style="--i:3" data-role="agen">
+        <span class="ic" style="background:#FDE6E3">🛻</span>
+        <span><b>Agen Mitra</b><small>Tengkulak/pengepul — volume pasti + fee per kg tanpa risiko harga.</small></span>
+        <span class="go">→</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- APP -->
+<div class="app" id="app">
+  <aside class="sidebar">
+    <img class="logo" src="logo.svg" alt="KunciPanen">
+    <nav id="snav" aria-label="Navigasi utama"></nav>
+    <div class="sb-mascot"><img src="maskot.svg" alt=""><span id="sbTip">Kunci harga sebelum lonjakan berikutnya.</span></div>
+    <button class="sb-role" id="sbRole"></button>
+  </aside>
+  <div>
+    <header class="topbar">
+      <img class="logo" src="logo.svg" alt="KunciPanen">
+      <h1 id="title">Beranda</h1>
+      <span class="city"><i></i>Solo Raya</span>
+      <button class="iconbtn" id="bell" aria-label="Notifikasi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="dot"></span></button>
+      <button class="iconbtn avatar" id="roleBtn" aria-label="Ganti peran">🍛</button>
+    </header>
+    <main><div id="view"></div></main>
+  </div>
+  <nav class="bnav" id="bnav" aria-label="Navigasi bawah"><span class="pill"></span></nav>
+</div>
+
+<div class="minibar" id="minibar"><div><small>Estimasi nilai kontrak</small><b class="num" id="mbTotal">Rp0</b></div><button class="btn gold" id="mbBtn">Kunci Harga</button></div>
+
+<!-- MODAL KUNCI -->
+<div class="modal" id="lockModal" role="dialog" aria-modal="true" aria-labelledby="lmT">
+  <div class="box">
+    <svg class="biglock" viewBox="0 0 120 120" aria-hidden="true">
+      <g class="shk"><path d="M36 58 V44 a24 24 0 0 1 48 0 V58" fill="none" stroke="#2FA463" stroke-width="12" stroke-linecap="round"/></g>
+      <g class="bd"><rect x="18" y="52" width="84" height="62" rx="20" fill="#0F3D2E"/>
+      <path d="M60 66 C68 66 72 72 72 78 C72 83 69 86 66 88 L68 101 Q68 104 65 104 H55 Q52 104 52 101 L54 88 C51 86 48 83 48 78 C48 72 52 66 60 66 Z" fill="#F2B33D"/></g>
+    </svg>
+    <h2 id="lmT">Harga terkunci! 🎉</h2>
+    <p id="lmP"></p>
+    <div class="meta" id="lmMeta"></div>
+    <button class="btn block" id="lmGo">Lihat kontrak saya</button>
+    <button class="btn ghost block" style="margin-top:8px" id="lmClose">Tutup</button>
+  </div>
+</div>
+
+<!-- SHEET PERAN -->
+<div class="sheet" id="sheet">
+  <div class="pane">
+    <div class="grab"></div>
+    <h3 style="font-size:18px;font-weight:800">Ganti peran</h3>
+    <p class="muted" style="font-size:13px">Prototype ini menampilkan tiga sisi platform. Pilih untuk melihat tampilannya.</p>
+    <div class="roles" id="sheetRoles"></div>
+    <p class="foot">Prototype demo · Next Gen BMC 2.0 · IBC 2026</p>
+  </div>
+</div>
+
+<div id="toasts"></div>
+<canvas id="confetti"></canvas>
+
+<script>
+/* ================= DATA DEMO ================= */
+const KOM=[
+ {id:'ck',n:'Cabai merah keriting',e:'🌶️',g:'segar',mkt:82500,chg:15.7,lo:45000,hi:65000},
+ {id:'cr',n:'Cabai rawit merah',e:'🔥',g:'segar',mkt:114000,chg:9.1,lo:60000,hi:85000},
+ {id:'bm',n:'Bawang merah',e:'🧅',g:'simpan',mkt:43450,chg:16.5,lock:48000},
+ {id:'tm',n:'Tomat',e:'🍅',g:'segar',mkt:14500,chg:-4.2,lo:9000,hi:15000},
+ {id:'kp',n:'Kopi arabika (green bean)',e:'☕',g:'simpan',mkt:135000,chg:3.8,lock:128000},
+ {id:'ga',n:'Gula aren',e:'🍯',g:'simpan',mkt:32000,chg:1.2,lock:30000},
+ {id:'tl',n:'Telur ayam',e:'🥚',g:'hewani',mkt:31550,chg:5.3,lock:30000,w2:true},
+ {id:'kt',n:'Kentang',e:'🥔',g:'segar',mkt:18000,chg:-2.1,lo:13000,hi:19000},
+];
+const K=id=>KOM.find(k=>k.id===id);
+const ROLES={
+ kuliner:{e:'🍛',name:'Warung Bu Sri',sub:'Usaha Kuliner · Solo',bg:'#FFF0CF',
+   nav:[['home','Beranda','home'],['keranjang','Keranjang','basket'],['pita','Pita Harga','band'],['patungan','Patungan','users'],['kontrak','Kontrak','file']],
+   tip:'Cabai rawit naik minggu ini. Lot Patungan Solo hampir penuh!'},
+ petani:{e:'🧑‍🌾',name:'Poktan Sumber Makmur',sub:'Petani · Boyolali',bg:'#E3F5EA',
+   nav:[['home','Beranda','home'],['tawaran','Tawaran Lot','sprout'],['kontrak','Kontrak','file']],
+   tip:'Harga lantaimu aman walau panen raya. Cek tawaran lot baru!'},
+ agen:{e:'🛻',name:'Pak Darto',sub:'Agen Mitra · Boyolali–Solo',bg:'#FDE6E3',
+   nav:[['home','Beranda','home'],['rute','Rute Hari Ini','truck'],['kontrak','Kontrak','file']],
+   tip:'9 outlet menunggu kirimanmu pagi ini. Semangat, Pak!'}
+};
+const ICON={
+ home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+ basket:'<path d="M5 10h14l-1.5 9.2a2 2 0 0 1-2 1.8h-7a2 2 0 0 1-2-1.8z"/><path d="m9 10 3-6 3 6"/><path d="M10 14v3M14 14v3"/>',
+ band:'<path d="M3 17c3-6 6 2 9-4s6 1 9-5"/><path d="M3 9h18M3 15h18" stroke-dasharray="2 3"/>',
+ users:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c.6-3.5 3-5.5 6-5.5s5.4 2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.6c2.6.2 4.4 2 5 5.4"/>',
+ file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><rect x="9" y="12" width="6" height="5" rx="1.2"/><path d="M10 12v-1a2 2 0 0 1 4 0v1"/>',
+ sprout:'<path d="M12 21v-9"/><path d="M12 12C12 7 8 5 4 5c0 4 3 7 8 7z"/><path d="M12 10c0-4 3-6 8-6 0 4-3 6-8 6z"/>',
+ truck:'<path d="M3 6h11v10H3z"/><path d="M14 9h4l3 3.5V16h-7"/><circle cx="7" cy="17.5" r="2"/><circle cx="17" cy="17.5" r="2"/>',
+ lock:'<rect x="4" y="11" width="16" height="10" rx="3"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+ check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+ chev:'<path d="m6 9 6 6 6-6"/>'
+};
+const ic=(n,s=22,w=2)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${ICON[n]}</svg>`;
+
+const S={role:'kuliner',view:'home',
+  cart:{ck:15,bm:10},tenor:3,pitaKom:'ck',pitaMkt:82500,lantaiMkt:26000,
+  joined:{},stopsDone:2,
+  contracts:[
+   {id:'KP-SOLO-0142',items:[['ck',15],['bm',10],['tm',12],['kp',5]],tenor:3,step:3,start:'1 Okt 2026',end:'31 Des 2026',agent:'Pak Darto'},
+   {id:'KP-SOLO-0098',items:[['ga',8]],tenor:6,step:4,start:'1 Agu 2026',end:'31 Jan 2027',agent:'Bu Narti'}
+  ],
+  lots:[
+   {k:'ck',target:2000,fill:1560,outlets:23,closes:'2 hr 14 j'},
+   {k:'cr',target:900,fill:576,outlets:17,closes:'3 hr 6 j'},
+   {k:'bm',target:1500,fill:1215,outlets:21,closes:'5 hr'},
+   {k:'tm',target:1200,fill:540,outlets:11,closes:'6 hr'},
+   {k:'kp',target:400,fill:352,outlets:9,closes:'1 hr 20 j'}
+  ],
+  offers:[
+   {k:'ck',vol:'600 kg/minggu',dur:'12 minggu',term:'Pita Rp45–65 rb/kg',buyers:23,accepted:false},
+   {k:'tm',vol:'400 kg/minggu',dur:'8 minggu',term:'Pita Rp9–15 rb/kg',buyers:11,accepted:false},
+   {k:'bm',vol:'1,2 ton/bulan',dur:'6 bulan',term:'Lantai Rp18 rb + bagi naik 50%',buyers:21,accepted:false}
+  ]
+};
+
+/* ================= UTIL ================= */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const fmt=v=>new Intl.NumberFormat('id-ID').format(Math.round(v));
+const rp=v=>(v<0?'−':'')+'Rp'+fmt(Math.abs(v));
+const rpS=v=>{const a=Math.abs(v),s=v<0?'−':'';return a>=1e9?s+'Rp'+(a/1e9).toFixed(1).replace('.',',')+' M':a>=1e6?s+'Rp'+(a/1e6).toFixed(1).replace('.',',')+' jt':a>=1e3?s+'Rp'+(a%1000?(a/1e3).toFixed(1).replace('.',','):a/1e3)+' rb':s+'Rp'+a};
+const cprice=(k,m=k.mkt)=>k.g==='segar'?Math.min(k.hi,Math.max(k.lo,m)):k.lock;
+const estPrice=k=>k.g==='segar'?(k.lo+k.hi)/2:k.lock;
+const typeName=k=>k.g==='segar'?'Pita Harga · antar mingguan':'Harga Tetap';
+const greet=()=>{const h=new Date().getHours();return h<11?'Selamat pagi':h<15?'Selamat siang':h<18?'Selamat sore':'Selamat malam'};
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function countUp(root=document){
+  root.querySelectorAll('[data-count]').forEach(el=>{
+    const to=+el.dataset.count, isRp=el.dataset.rp!==undefined, suf=el.dataset.suf||'';
+    const f=v=>(isRp?rp(v):fmt(v))+suf;
+    if(reduce){el.textContent=f(to);return}
+    const t0=performance.now(),d=1100;
+    (function tick(t){const p=Math.min(1,(t-t0)/d),e=1-Math.pow(1-p,3);el.textContent=f(to*e);if(p<1)requestAnimationFrame(tick)})(t0);
+  });
+}
+function toast(msg,emo='✅'){
+  const t=document.createElement('div');t.className='toast';t.innerHTML=`<span style="font-size:18px">${emo}</span><span>${msg}</span>`;
+  $('#toasts').appendChild(t);setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),400)},2600);
+}
+document.addEventListener('pointerdown',e=>{
+  const b=e.target.closest('.btn');if(!b)return;
+  const r=b.getBoundingClientRect(),s=Math.max(r.width,r.height),sp=document.createElement('span');
+  sp.className='ripple';sp.style.cssText=`width:${s}px;height:${s}px;left:${e.clientX-r.left-s/2}px;top:${e.clientY-r.top-s/2}px`;
+  b.appendChild(sp);setTimeout(()=>sp.remove(),600);
+});
+
+/* confetti */
+const cv=$('#confetti'),cx=cv.getContext('2d');let parts=[];
+function confetti(){
+  if(reduce)return;
+  cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio;cx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  const cols=['#4CC27A','#1F8A4C','#F2B33D','#FFD36B','#E2483D','#0F3D2E'];
+  for(let i=0;i<140;i++)parts.push({x:innerWidth/2,y:innerHeight*.42,vx:(Math.random()-.5)*14,vy:Math.random()*-14-4,s:Math.random()*7+4,c:cols[i%cols.length],r:Math.random()*6,vr:(Math.random()-.5)*.3,l:0});
+  if(parts.length===140)requestAnimationFrame(loopC);
+}
+function loopC(){
+  cx.clearRect(0,0,innerWidth,innerHeight);
+  parts.forEach(p=>{p.vy+=.38;p.vx*=.985;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.l++;
+    cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.globalAlpha=Math.max(0,1-p.l/130);cx.fillRect(-p.s/2,-p.s/3,p.s,p.s*.6);cx.restore()});
+  parts=parts.filter(p=>p.l<130&&p.y<innerHeight+40);
+  if(parts.length)requestAnimationFrame(loopC);else cx.clearRect(0,0,innerWidth,innerHeight);
+}
+
+/* ================= NAVIGASI ================= */
+function buildNav(){
+  const R=ROLES[S.role];
+  $('#snav').innerHTML=R.nav.map(([v,l,i])=>`<button class="sb" data-v="${v}">${ic(i,20)}<span>${l}</span></button>`).join('');
+  $('#bnav').innerHTML='<span class="pill"></span>'+R.nav.map(([v,l,i])=>`<button class="nb" data-v="${v}">${ic(i)}<span>${l.split(' ')[0]}</span></button>`).join('');
+  $('#roleBtn').textContent=R.e;
+  $('#sbRole').innerHTML=`<span class="avatar">${R.e}</span><span><b style="font-size:14px">${R.name}</b><small>${R.sub} · ganti</small></span>`;
+  $('#sbTip').textContent=R.tip;
+  $$('[data-v]').forEach(b=>b.onclick=()=>go(b.dataset.v));
+}
+function movePill(){
+  const on=$('#bnav .nb.on'),pill=$('#bnav .pill');if(!on||!pill)return;
+  pill.style.width=on.offsetWidth+'px';pill.style.transform=`translateX(${on.offsetLeft}px)`;
+}
+function go(v){
+  S.view=v;
+  $$('[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  movePill();
+  const item=ROLES[S.role].nav.find(n=>n[0]===v);$('#title').textContent=item?item[1]:'';
+  const fn=VIEWS[S.role+':'+v]||VIEWS[v];
+  $('#view').innerHTML=fn();
+  $$('#view > *').forEach((el,i)=>{el.classList.add('rise');el.style.setProperty('--i',i)});
+  countUp($('#view'));
+  (AFTER[S.role+':'+v]||AFTER[v]||(()=>{}))();
+  $('#minibar').classList.toggle('show',S.role==='kuliner'&&v==='keranjang'&&Object.keys(S.cart).length>0);
+  scrollTo({top:0,behavior:reduce?'auto':'smooth'});
+}
+
+/* ================= VIEWS ================= */
+const VIEWS={}, AFTER={};
+const series=[52000,48500,55000,61000,58000,70500,76000,72000,80000,95000,100000,82500];
+
+VIEWS['kuliner:home']=()=>{
+  const locked=S.contracts.flatMap(c=>c.items);
+  const uniq=[...new Map(locked.map(([id,q])=>[id,q])).entries()];
+  return `
+  <section class="hello"><h2>${greet()}, Bu Sri 👋</h2><p>5 bahan utama terkunci sampai Januari 2027 — HPP menu tetap aman.</p></section>
+  <div class="grid grid-2">
+    <div class="card hero">
+      <span class="ring a"></span><span class="ring b"></span>
+      <span class="tag dark">${ic('lock',14)} Hemat bulan ini vs harga pasar</span>
+      <div class="big num" data-count="1284500" data-rp>Rp0</div>
+      <small>Oktober 2026 · dari 2 kontrak aktif</small>
+      <div class="chips"><span class="tag dark">🌶️ Cabai −Rp17.500/kg</span><span class="tag dark">💳 DP aman di rekening bersama</span></div>
+      <img class="mini-m" src="maskot.svg" alt="">
+    </div>
+    <div class="card">
+      <div class="between"><h3>${ic('truck',18)} Kiriman berikutnya</h3><span class="tag gold">Kamis 06.00</span></div>
+      <p class="sub">Agen Mitra Pak Darto · dari Poktan Sumber Makmur, Boyolali</p>
+      <svg class="route" viewBox="0 0 320 90" id="miniRoute">
+        <path id="mrPath" d="M20 66 C80 10 120 80 170 44 S270 20 300 40" fill="none" stroke="#EADFC8" stroke-width="6" stroke-linecap="round"/>
+        <path d="M20 66 C80 10 120 80 170 44 S270 20 300 40" fill="none" stroke="#1F8A4C" stroke-width="6" stroke-linecap="round" class="flow"/>
+        <circle cx="20" cy="66" r="9" fill="#E3F5EA" stroke="#1F8A4C" stroke-width="3"/><text x="20" y="88" font-size="10" text-anchor="middle" font-weight="700" fill="#5E6F66">Kebun</text>
+        <circle cx="300" cy="40" r="9" fill="#FFF0CF" stroke="#F2B33D" stroke-width="3"/><text x="312" y="66" font-size="10" text-anchor="end" font-weight="700" fill="#5E6F66">Warungmu</text>
+        <g id="mrTruck"><circle r="14" fill="#0F3D2E"/><text y="5" font-size="14" text-anchor="middle">🛻</text></g>
+      </svg>
+      <div class="grid pair" style="margin-top:8px">
+        <div class="stat"><small>Isi kiriman</small><b>4 bahan · 42 kg</b></div>
+        <div class="stat"><small>Mutu dicek</small><b>Saat diterima</b></div>
+      </div>
+    </div>
+  </div>
+  ${ticker()}
+  <div class="grid grid-2">
+    <div class="card" id="chartCard">
+      <div class="between"><div><h3>Pasar vs kontrakmu</h3><p class="sub">Cabai merah keriting · 12 minggu terakhir</p></div><span class="tag">Pita Rp45–65 rb</span></div>
+      ${chartSVG()}
+      <div class="legend"><span><i style="background:#E2483D"></i>Harga pasar</span><span><i style="background:#1F8A4C"></i>Harga kontrak</span><span><i style="background:#F2B33D;opacity:.5;height:10px"></i>Pita harga</span></div>
+      <div class="tip-box" id="ctip"></div>
+    </div>
+    <div class="card">
+      <div class="between"><h3>${ic('lock',18)} Bahan terkunci</h3><button class="tag" onclick="go('kontrak')">Lihat semua →</button></div>
+      <div class="items">${uniq.map(([id,q])=>{const k=K(id),c=cprice(k);return `
+        <div class="item"><span class="emo">${k.e}</span><div class="t"><b>${k.n}</b><small>${q} kg/minggu · ${k.g==='segar'?'Pita Harga':'Harga Tetap'}</small></div>
+        <div class="price"><b class="num">${rp(c)}</b>${k.mkt>c?`<s class="num">${rp(k.mkt)}</s>`:`<small class="muted num">pasar ${rp(k.mkt)}</small>`}</div></div>`}).join('')}</div>
+    </div>
+  </div>
+  <div class="card tipcard"><img src="maskot.svg" alt=""><div><p>Cabai rawit tembus <b>Rp114.000/kg</b>. Lot Patungan Solo sudah 64% — ikut sekarang dan kunci di pita Rp60–85 rb.</p><button class="btn" onclick="go('patungan')">Ikut Patungan →</button></div></div>
+  ${foot()}`;
+};
+AFTER['kuliner:home']=()=>{chartInteract();truckAlong('#mrPath','#mrTruck',.62,true)};
+
+function ticker(){
+  const it=KOM.map(k=>`<span class="tk">${k.e} ${k.n} <b class="num">${rp(k.mkt)}</b><span class="${k.chg>0?'up':'down'}">${k.chg>0?'▲':'▼'} ${Math.abs(k.chg).toString().replace('.',',')}%</span></span>`).join('');
+  return `<div class="ticker" aria-label="Harga pasar hari ini"><div class="track">${it}${it}</div></div>`;
+}
+function chartSVG(){
+  const W=600,H=250,pl=60,pr=12,pt=14,pb=34,min=30000,max=110000;
+  const x=i=>pl+i*(W-pl-pr)/(series.length-1), y=v=>pt+(H-pt-pb)*(1-(v-min)/(max-min));
+  const k=K('ck'),cs=series.map(v=>cprice(k,v));
+  const line=a=>a.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join(' ');
+  const grid=[40000,60000,80000,100000].map(v=>`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="#EFE4CD" stroke-dasharray="3 5"/><text x="${pl-8}" y="${y(v)+4}" font-size="17" text-anchor="end" fill="#8A968F">${v/1000}rb</text>`).join('');
+  const xl=series.map((_,i)=>i%2?'' :`<text x="${x(i)}" y="${H-6}" font-size="17" text-anchor="middle" fill="#8A968F">M${i+1}</text>`).join('');
+  const area=line(cs)+` L${x(series.length-1)} ${H-pb} L${x(0)} ${H-pb} Z`;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" id="chart">
+    <defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1F8A4C" stop-opacity=".22"/><stop offset="1" stop-color="#1F8A4C" stop-opacity="0"/></linearGradient></defs>
+    ${grid}${xl}
+    <rect x="${pl}" y="${y(65000)}" width="${W-pl-pr}" height="${y(45000)-y(65000)}" fill="#F2B33D" opacity=".16" rx="6"/>
+    <path d="${area}" fill="url(#ga)" opacity="0"><animate attributeName="opacity" to="1" dur="1s" begin=".9s" fill="freeze"/></path>
+    <path class="draw" style="--len:1400" d="${line(series)}" fill="none" stroke="#E2483D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path class="draw" style="--len:1400" d="${line(cs)}" fill="none" stroke="#1F8A4C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <line id="cl" y1="${pt}" y2="${H-pb}" stroke="#10261D" stroke-dasharray="3 4" opacity="0"/>
+    <circle id="cm" r="6" fill="#E2483D" stroke="#fff" stroke-width="2" opacity="0"/><circle id="cc" r="6" fill="#1F8A4C" stroke="#fff" stroke-width="2" opacity="0"/>
+    <rect x="${pl}" y="0" width="${W-pl-pr}" height="${H}" fill="transparent" id="chit"/>
+  </svg>`;
+}
+function chartInteract(){
+  const svg=$('#chart'),hit=$('#chit');if(!svg)return;
+  const W=600,H=250,pl=60,pr=12,pt=14,pb=34,min=30000,max=110000;
+  const x=i=>pl+i*(W-pl-pr)/(series.length-1), y=v=>pt+(H-pt-pb)*(1-(v-min)/(max-min)), k=K('ck'),tip=$('#ctip');
+  const show=e=>{
+    const r=svg.getBoundingClientRect(),sx=(e.clientX-r.left)*W/r.width,i=Math.max(0,Math.min(11,Math.round((sx-pl)/((W-pl-pr)/11))));
+    const m=series[i],c=cprice(k,m);
+    $('#cl').setAttribute('x1',x(i));$('#cl').setAttribute('x2',x(i));$('#cl').setAttribute('opacity',.5);
+    [['#cm',m],['#cc',c]].forEach(([s,v])=>{$(s).setAttribute('cx',x(i));$(s).setAttribute('cy',y(v));$(s).setAttribute('opacity',1)});
+    const card=$('#chartCard').getBoundingClientRect();
+    tip.style.left=(r.left-card.left+x(i)*r.width/W)+'px';tip.style.top=(r.top-card.top+y(Math.max(m,c))*r.height/H)+'px';tip.style.opacity=1;
+    const d=m-c;tip.innerHTML=`<b>Minggu ${i+1}</b><br>Pasar ${rp(m)} · Kontrak ${rp(c)}<br>${d>0?'Hemat '+rp(d):d<0?'Di atas pasar '+rp(-d):'Sama dengan pasar'}/kg`;
+  };
+  hit.addEventListener('pointermove',show);hit.addEventListener('pointerdown',show);
+  hit.addEventListener('pointerleave',()=>{tip.style.opacity=0;['#cl','#cm','#cc'].forEach(s=>$(s).setAttribute('opacity',0))});
+}
+function truckAlong(pathSel,truckSel,stop=1,loop=false){
+  const p=$(pathSel),t=$(truckSel);if(!p||!t)return;const L=p.getTotalLength();
+  const place=f=>{const pt=p.getPointAtLength(L*f);t.setAttribute('transform',`translate(${pt.x},${pt.y})`)};
+  if(reduce){place(stop);return}
+  const t0=performance.now(),d=2600;
+  (function tick(now){if(!document.body.contains(t))return;let f=((now-t0)/d);
+    if(loop){f=f%1.4;f=Math.min(f,1)*stop}else{f=Math.min(1,f);f=(1-Math.pow(1-f,3))*stop}
+    place(f);requestAnimationFrame(tick)})(t0);
+}
+
+/* ---- Keranjang ---- */
+VIEWS['kuliner:keranjang']=()=>`
+  <section class="hello"><h2>Susun Keranjang Menu 🧺</h2><p>Pilih bahan utama, atur volume mingguan, lalu kunci harganya untuk 1–6 bulan.</p></section>
+  <div class="grid grid-2">
+    <div class="grid">
+      <div class="card"><h3>1 · Pilih bahan</h3><p class="sub">Bahan segar memakai <b>Pita Harga</b>, bahan tahan simpan memakai <b>Harga Tetap</b>.</p>
+        <div class="picks">${KOM.map(k=>`<button class="pick ${S.cart[k.id]?'on':''}" data-pick="${k.id}">
+          <span class="chk">${ic('check',14,3)}</span><span class="emo">${k.e}</span><b>${k.n}</b>
+          <small>${k.g==='segar'?`Pita ${rpS(k.lo)}–${rpS(k.hi).replace('Rp','')}`:`Tetap ${rp(k.lock)}`}/kg</small>
+          ${k.w2?'<small class="tag gold" style="margin-top:6px">Gelombang 2</small>':''}</button>`).join('')}</div>
+      </div>
+      <div class="card"><h3>2 · Volume per minggu</h3><p class="sub">Kebutuhanmu digabung dengan outlet lain di Solo (Patungan).</p>
+        <div class="sel" id="sel"></div></div>
+    </div>
+    <div class="card sticky" id="sum"></div>
+  </div>${foot()}`;
+function renderSel(){
+  const ids=Object.keys(S.cart);
+  $('#sel').innerHTML=ids.length?ids.map(id=>{const k=K(id);return `<div class="item"><span class="emo">${k.e}</span><div class="t"><b>${k.n}</b><small>${typeName(k)}</small></div>
+    <div class="step"><button data-dq="${id}" data-d="-1" aria-label="Kurangi">−</button><span class="num">${S.cart[id]} kg</span><button data-dq="${id}" data-d="1" aria-label="Tambah">+</button></div></div>`}).join('')
+    :'<p class="muted" style="font-size:13px;padding:10px 0">Belum ada bahan. Pilih minimal satu di atas.</p>';
+  $$('[data-dq]').forEach(b=>b.onclick=()=>{const id=b.dataset.dq;S.cart[id]=Math.max(1,S.cart[id]+(+b.dataset.d)*(S.cart[id]>=20?5:1));renderSel();renderSum()});
+}
+function calc(){
+  const w=Math.round(S.tenor*4.33);let nilai=0,prot=0,kg=0;
+  for(const id in S.cart){const k=K(id),q=S.cart[id];nilai+=q*w*estPrice(k);prot+=q*w*(k.mkt-estPrice(k));kg+=q}
+  return{w,nilai,prot,kg,fee:nilai*.02,dp:nilai*.15,sub:149000*S.tenor};
+}
+function renderSum(){
+  const c=calc(),pct=(S.tenor-1)/5*100;
+  $('#sum').innerHTML=`<h3>3 · Tenor & ringkasan</h3>
+    <div class="between" style="margin-top:12px"><span class="muted" style="font-size:13px;font-weight:600">Kunci selama</span><b style="font-size:18px">${S.tenor} bulan</b></div>
+    <input type="range" class="range" min="1" max="6" step="1" value="${S.tenor}" style="--p:${pct}%" id="tenor" aria-label="Tenor kontrak">
+    <div class="between muted" style="font-size:11px;font-weight:700"><span>1 bln</span><span>6 bln</span></div>
+    <div style="margin-top:12px">
+      <div class="sumrow"><span>Total volume</span><b class="num">${c.kg} kg/minggu · ${c.w} minggu</b></div>
+      <div class="sumrow"><span>Fee platform (2%)</span><b class="num">${rp(c.fee)}</b></div>
+      <div class="sumrow"><span>Uang muka 15% → rekening bersama</span><b class="num">${rp(c.dp)}</b></div>
+      <div class="sumrow"><span>Langganan Keranjang Menu</span><b class="num">${rp(149000)}/bln</b></div>
+      <div class="sumrow"><span>Selisih vs harga pasar hari ini</span><b class="num" style="color:${c.prot>=0?'var(--green)':'var(--chili)'}">${c.prot>=0?'+':''}${rp(c.prot)}</b></div>
+    </div>
+    <div class="total"><div><small style="opacity:.75;font-size:12px">Estimasi nilai kontrak</small><br><b class="num">${rp(c.nilai)}</b></div><span class="tag dark">${Object.keys(S.cart).length} bahan</span></div>
+    <button class="btn gold block" id="lockBtn" ${c.nilai?'':'disabled style="opacity:.5"'}>${ic('lock',18)} Kunci Harga Sekarang</button>
+    <p class="foot">Penyerahan fisik · tanpa margin · kontrak tidak bisa diperjualbelikan.</p>`;
+  $('#tenor').oninput=e=>{S.tenor=+e.target.value;renderSum()};
+  $('#lockBtn').onclick=lockNow;
+  $('#mbTotal').textContent=rp(c.nilai);
+  $('#minibar').classList.toggle('show',S.view==='keranjang'&&c.nilai>0);
+}
+AFTER['kuliner:keranjang']=()=>{
+  renderSel();renderSum();
+  $$('[data-pick]').forEach(b=>b.onclick=()=>{const id=b.dataset.pick;if(S.cart[id])delete S.cart[id];else S.cart[id]=10;b.classList.toggle('on',!!S.cart[id]);renderSel();renderSum()});
+  $('#mbBtn').onclick=()=>$('#sum').scrollIntoView({behavior:'smooth',block:'center'});
+};
+function lockNow(){
+  const c=calc(),n=Object.keys(S.cart).length,id='KP-SOLO-0'+(150+S.contracts.length);
+  S.contracts.unshift({id,items:Object.entries(S.cart),tenor:S.tenor,step:1,start:'9 Nov 2026',end:['','Des 2026','Jan 2027','Feb 2027','Mar 2027','Apr 2027','Mei 2027'][S.tenor],agent:'Pak Darto',fresh:true});
+  $('#lmP').innerHTML=`${n} bahan masuk <b>Patungan Solo Raya</b>. Begitu lot terpenuhi, kontrak dicocokkan dengan kelompok tani lewat Agen Mitra.`;
+  $('#lmMeta').innerHTML=`<div>No. kontrak<b>${id}</b></div><div>Tenor<b>${S.tenor} bulan</b></div><div>Nilai estimasi<b class="num">${rpS(c.nilai)}</b></div><div>Uang muka<b class="num">${rpS(c.dp)}</b></div>`;
+  $('#lockModal').classList.add('show');setTimeout(confetti,950);
+}
+$('#lmGo').onclick=()=>{$('#lockModal').classList.remove('show');go('kontrak')};
+$('#lmClose').onclick=()=>$('#lockModal').classList.remove('show');
+
+/* ---- Pita Harga ---- */
+VIEWS['kuliner:pita']=()=>`
+  <section class="hello"><h2>Simulasi Pita Harga 📊</h2><p>Geser harga pasar dan lihat bagaimana pita membagi risiko secara adil — dua arah.</p></section>
+  <div class="seg">${KOM.filter(k=>k.g==='segar').map(k=>`<button data-pk="${k.id}" class="${S.pitaKom===k.id?'on':''}">${k.e} ${k.n}</button>`).join('')}</div>
+  <div class="grid grid-2">
+    <div class="card" id="pitaCard"></div>
+    <div class="grid" id="pitaSide"></div>
+  </div>${foot()}`;
+function renderPita(){
+  const k=K(S.pitaKom),min=Math.round(k.lo*.4/500)*500,max=Math.round(k.hi*1.9/500)*500;
+  S.pitaMkt=Math.min(max,Math.max(min,S.pitaMkt));
+  const m=S.pitaMkt,c=cprice(k,m),d=m-c,pos=v=>((v-min)/(max-min)*100).toFixed(2)+'%';
+  $('#pitaCard').innerHTML=`<div class="between"><h3>${k.e} ${k.n}</h3><span class="tag">Pita ${rpS(k.lo)}–${rpS(k.hi).replace('Rp','')}</span></div>
+   <div class="bigs"><div><small>Harga pasar (acuan)</small><b class="num" style="color:var(--chili)">${rp(m)}</b></div><div class="k"><small>Harga kontrak kamu</small><b class="num">${rp(c)}</b></div></div>
+   <div class="scale">
+     <div class="bar"></div><div class="band" style="left:${pos(k.lo)};width:calc(${pos(k.hi)} - ${pos(k.lo)})"></div>
+     <div class="mk m" style="left:${pos(m)}"><span>Pasar</span><i></i></div>
+     <div class="mk c" style="left:${pos(c)}"><span>🔒 Kontrak</span><i></i></div>
+   </div>
+   <input type="range" class="range" id="pm" min="${min}" max="${max}" step="500" value="${m}" style="--p:${pos(m)}" aria-label="Harga pasar">
+   <div class="between muted" style="font-size:11px;font-weight:700"><span>${rpS(min)}</span><span>Geser harga pasar ↔</span><span>${rpS(max)}</span></div>`;
+  const rm=d>0?['g','Hemat',rp(d)+'/kg','Terlindung dari lonjakan harga.']:d<0?['o','Bayar di atas pasar',rp(-d)+'/kg','Harga minimum pita menjaga pasokan tetap jalan.']:['n','Sama dengan pasar','Rp0','Harga masih di dalam pita.'];
+  const pt=d<0?['g','Terlindungi',rp(-d)+'/kg','Tidak ikut anjlok saat panen raya.']:d>0?['o','Melepas kenaikan',rp(d)+'/kg','Ditukar dengan kepastian pembeli & harga.']:['n','Sama dengan pasar','Rp0','Harga masih di dalam pita.'];
+  const presets=k.id==='ck'?[30000,50000,82500,100000]:[k.lo*.7,(k.lo+k.hi)/2,k.hi*1.25,k.hi*1.55].map(v=>Math.round(v/500)*500);
+  $('#pitaSide').innerHTML=`<div class="impact">
+     <div class="imp ${rm[0]}"><div class="e">🍛</div><small>Rumah makan · ${rm[1]}</small><b class="num">${rm[2]}</b><p>${rm[3]}</p></div>
+     <div class="imp ${pt[0]}"><div class="e">🧑‍🌾</div><small>Petani · ${pt[1]}</small><b class="num">${pt[2]}</b><p>${pt[3]}</p></div></div>
+     <div class="card"><h3>Contoh skenario</h3><p class="sub">Ketuk baris untuk mencoba${k.id==='ck'?' · Rp82.500 = harga 6 Okt 2026 (PIHPS)':''}</p>
+     <table><thead><tr><th>Pasar</th><th>Kontrak</th><th>Rumah makan</th></tr></thead><tbody>
+     ${presets.map(v=>{const cc=cprice(k,v),dd=v-cc;return `<tr class="click ${v===m?'on':''}" data-pre="${v}"><td class="num">${rp(v)}</td><td class="num"><b>${rp(cc)}</b></td><td style="color:${dd>0?'var(--green)':dd<0?'var(--gold-d)':'var(--muted)'};font-weight:700">${dd>0?'hemat '+rpS(dd):dd<0?'+'+rpS(-dd):'sama'}</td></tr>`}).join('')}
+     </tbody></table></div>`;
+  $('#pm').oninput=e=>{S.pitaMkt=+e.target.value;renderPita();$('#pm').focus()};
+  $$('[data-pre]').forEach(r=>r.onclick=()=>{S.pitaMkt=+r.dataset.pre;renderPita()});
+}
+AFTER['kuliner:pita']=()=>{renderPita();$$('[data-pk]').forEach(b=>b.onclick=()=>{S.pitaKom=b.dataset.pk;S.pitaMkt=K(b.dataset.pk).mkt;$$('[data-pk]').forEach(x=>x.classList.toggle('on',x===b));renderPita()})};
+
+/* ---- Patungan ---- */
+VIEWS['kuliner:patungan']=()=>`
+  <section class="hello"><h2>Patungan Solo Raya 🤝</h2><p>Usaha kecil bergabung jadi satu lot besar — cukup volume untuk kontrak langsung dengan kelompok tani.</p></section>
+  <div class="card">
+    <div class="between"><h3>Aliran barang & uang</h3><div class="keys"><span><i style="background:#1F8A4C"></i>Barang</span><span><i style="background:#F2B33D"></i>Uang</span></div></div>
+    ${netSVG()}
+  </div>
+  <div class="grid grid-2e" id="lots">${S.lots.map((l,i)=>lotCard(l,i)).join('')}</div>${foot()}`;
+function netSVG(){
+  const outs=[['🍛',60],['☕',125],['🥘',190],['🥐',255]],farms=[['🌶️',70],['🧅',160],['☕',250]];
+  return `<svg class="net" viewBox="0 0 640 310">
+   ${outs.map(([e,y])=>`<path d="M96 ${y} C200 ${y} 230 155 320 155" fill="none" stroke="#F2B33D" stroke-width="3" class="flow rev" opacity=".9"/>`).join('')}
+   ${outs.map(([e,y])=>`<path d="M96 ${y+8} C200 ${y+8} 230 163 320 163" fill="none" stroke="#1F8A4C" stroke-width="3" class="flow" opacity=".9"/>`).join('')}
+   ${farms.map(([e,y])=>`<path d="M320 155 C410 155 430 ${y} 544 ${y}" fill="none" stroke="#F2B33D" stroke-width="3" class="flow rev"/><path d="M320 163 C410 163 430 ${y+8} 544 ${y+8}" fill="none" stroke="#1F8A4C" stroke-width="3" class="flow"/>`).join('')}
+   ${outs.map(([e,y],i)=>`<g class="node" style="animation-delay:${i*.3}s"><circle cx="70" cy="${y+4}" r="26" fill="#FFF0CF" stroke="#F2B33D" stroke-width="3"/><text x="70" y="${y+11}" font-size="22" text-anchor="middle">${e}</text></g>`).join('')}
+   ${farms.map(([e,y],i)=>`<g class="node" style="animation-delay:${i*.4}s"><circle cx="570" cy="${y+4}" r="26" fill="#E3F5EA" stroke="#1F8A4C" stroke-width="3"/><text x="570" y="${y+11}" font-size="22" text-anchor="middle">${e}</text></g>`).join('')}
+   <g class="node"><rect x="272" y="112" width="96" height="96" rx="28" fill="#0F3D2E"/><path d="M302 150 v-8 a18 18 0 0 1 36 0 v8" fill="none" stroke="#4CC27A" stroke-width="8" stroke-linecap="round"/><rect x="292" y="146" width="56" height="44" rx="12" fill="#17573F"/><circle cx="320" cy="164" r="6" fill="#F2B33D"/><rect x="317" y="166" width="6" height="14" rx="2" fill="#F2B33D"/></g>
+   <text x="70" y="300" font-size="17" font-weight="700" text-anchor="middle" fill="#5E6F66">Outlet kuliner</text>
+   <text x="320" y="238" font-size="17" font-weight="700" text-anchor="middle" fill="#5E6F66">Lot per komoditas</text>
+   <text x="570" y="300" font-size="17" font-weight="700" text-anchor="middle" fill="#5E6F66">Kelompok tani</text>
+  </svg>`;
+}
+function lotCard(l,i){
+  const k=K(l.k),p=Math.min(100,l.fill/l.target*100),j=S.joined[l.k];
+  const faces=['🍛','☕','🥘','🍜','🥐','🍲'].slice(0,Math.min(6,Math.ceil(l.outlets/4)));
+  return `<div class="card lot" style="background:#fff"><div class="between"><div class="row"><span class="emo">${k.e}</span><div><b style="font-size:14.5px">${k.n}</b><div class="muted" style="font-size:12px">${typeName(k)}</div></div></div><span class="tag ${p>=80?'red':'gold'}">⏱ ${l.closes}</span></div>
+   <div class="prog"><b data-w="${p}"></b></div>
+   <div class="between" style="font-size:12.5px"><span><b class="num">${fmt(l.fill)}</b> / ${fmt(l.target)} kg/minggu · <b>${Math.round(p)}%</b></span><span class="row" style="gap:6px"><span class="faces">${faces.map(f=>`<span>${f}</span>`).join('')}</span><span class="muted">${l.outlets}</span></span></div>
+   <button class="btn ${j?'ghost':''} block" data-join="${i}">${j?'✓ Kamu ikut · '+j+' kg/minggu':'Ikut Patungan +15 kg/minggu'}</button></div>`;
+}
+AFTER['kuliner:patungan']=()=>{
+  requestAnimationFrame(()=>$$('.prog b').forEach(b=>b.style.width=b.dataset.w+'%'));
+  $$('[data-join]').forEach(b=>b.onclick=()=>{const l=S.lots[+b.dataset.join];if(S.joined[l.k])return;
+    S.joined[l.k]=15;l.fill+=15;l.outlets++;const wrap=document.createElement('div');wrap.innerHTML=lotCard(l,+b.dataset.join);
+    const card=b.closest('.lot');card.replaceWith(wrap.firstElementChild);AFTER['kuliner:patungan']();
+    toast(`Kamu ikut lot ${K(l.k).n} Solo Raya`,'🤝');if(l.fill>=l.target*.9)confetti()});
+};
+
+/* ---- Kontrak ---- */
+const STEPS=['Susun keranjang','Patungan & cocokkan','Tanda tangan & DP','Kumpul, sortir, antar','Tagih & bayar'];
+VIEWS['kontrak']=()=>{
+  const isK=S.role==='kuliner';
+  return `<section class="hello"><h2>${isK?'Kontrak saya':S.role==='petani'?'Kontrak pasokan':'Kontrak yang saya layani'} 📄</h2><p>Semua kontrak diserahkan fisik, tanpa margin, dan tidak dapat diperjualbelikan.</p></section>
+  <div class="grid trio">
+    <div class="stat card"><small>Kontrak aktif</small><b class="num" data-count="${S.contracts.length}">0</b></div>
+    <div class="stat card"><small>Tingkat penyerahan</small><b class="num" data-count="94" data-suf="%">0</b></div>
+    <div class="stat card"><small>Pembayaran tepat waktu</small><b class="num" data-count="98" data-suf="%">0</b></div>
+  </div>
+  ${S.contracts.map((c,i)=>contractCard(c,i)).join('')}${foot()}`;
+};
+function contractCard(c,i){
+  const w=Math.round(c.tenor*4.33),nilai=c.items.reduce((s,[id,q])=>s+q*w*estPrice(K(id)),0),mon=nilai/c.tenor;
+  const parts=[['Petani',.88,'#1F8A4C'],['Agen (fee/kg + jasa antar)',.09,'#4CC27A'],['Fee KunciPanen (2% + 1%)',.03,'#F2B33D']];
+  return `<div class="card ct ${i===0?'open':''}" data-ct="${i}">
+   <div class="head"><span class="emo" style="background:var(--mint)">${ic('lock',20)}</span><div><b style="font-size:15px">${c.id}</b> ${c.fresh?'<span class="tag gold">Baru</span>':''}<div class="muted" style="font-size:12.5px">${c.items.map(([id])=>K(id).e).join(' ')} · ${c.items.length} bahan · ${c.start} – ${c.end}</div></div><span class="chev">${ic('chev',20)}</span></div>
+   <div class="body"><div>
+     <div class="tl"><span class="fill" style="width:0" data-fw="${c.step/4*80}"></span>${STEPS.map((s,j)=>`<div class="${j<c.step?'done':j===c.step?'now':''}"><i>${j<c.step?'✓':j+1}</i>${s}</div>`).join('')}</div>
+     <div class="grid grid-2e" style="margin-top:12px">
+       <div><div class="items" style="margin-top:0">${c.items.map(([id,q])=>{const k=K(id);return `<div class="item"><span class="emo">${k.e}</span><div class="t"><b>${k.n}</b><small>${q} kg/minggu · ${k.g==='segar'?'Pita':'Tetap'}</small></div><div class="price"><b class="num">${k.g==='segar'?rpS(k.lo)+'–'+rpS(k.hi).replace('Rp',''):rp(k.lock)}</b></div></div>`}).join('')}</div></div>
+       <div>
+         <div class="stat"><small>Tagihan bulanan (estimasi)</small><b class="num">${rp(mon)}</b>
+         <div class="split">${parts.map(p=>`<i style="background:${p[2]}" data-sw="${p[1]*100}"></i>`).join('')}</div>
+         <div class="keys">${parts.map(p=>`<span><i style="background:${p[2]}"></i>${p[0]} ${Math.round(p[1]*100)}%</span>`).join('')}</div></div>
+         <div class="stat" style="margin-top:10px"><small>Agen Mitra</small><b style="font-size:15px">🛻 ${c.agent}</b><span class="muted" style="font-size:12px">Skor reputasi ⭐ 4,8 · 126 penyerahan</span></div>
+       </div>
+     </div>
+     <p class="foot" style="text-align:left">Pembagian dana ilustratif. Uang muka disimpan di rekening bersama bank, bukan oleh platform.</p>
+   </div></div></div>`;
+}
+AFTER['kontrak']=()=>{
+  const anim=root=>requestAnimationFrame(()=>{root.querySelectorAll('[data-fw]').forEach(f=>f.style.width=f.dataset.fw+'%');root.querySelectorAll('[data-sw]').forEach(f=>f.style.width=f.dataset.sw+'%')});
+  $$('.ct.open').forEach(anim);
+  $$('.ct').forEach(c=>c.querySelector('.head').onclick=()=>{c.classList.toggle('open');if(c.classList.contains('open'))anim(c)});
+  S.contracts.forEach(c=>c.fresh=false);
+};
+
+/* ---- Petani ---- */
+const LANTAI=18000,PLAFON=30000;
+const terima=m=>m<=LANTAI?LANTAI:Math.min(PLAFON,LANTAI+.5*(m-LANTAI));
+VIEWS['petani:home']=()=>`
+  <section class="hello"><h2>${greet()}, Poktan Sumber Makmur 🌱</h2><p>3 kontrak aktif · pembeli sudah pasti sebelum panen.</p></section>
+  <div class="grid grid-2">
+    <div class="card hero"><span class="ring a"></span><span class="ring b"></span>
+      <span class="tag dark">🌾 Pendapatan terjamin musim ini</span>
+      <div class="big num" data-count="186400000" data-rp>Rp0</div>
+      <small>dari 3 kontrak · 41 outlet di Solo Raya</small>
+      <div class="chips"><span class="tag dark">🔒 Harga lantai aktif</span><span class="tag dark">🏦 Rujukan modal kerja tersedia</span></div>
+      <img class="mini-m" src="maskot.svg" alt=""></div>
+    <div class="card"><h3>Panen berikutnya</h3><p class="sub">Dijemput Agen Mitra Pak Darto</p>
+      <div class="items">
+        <div class="item"><span class="emo">🌶️</span><div class="t"><b>Cabai merah keriting</b><small>Sabtu, 05.00 · 600 kg</small></div><span class="tag">Pita</span></div>
+        <div class="item"><span class="emo">🧅</span><div class="t"><b>Bawang merah</b><small>Senin, 05.00 · 300 kg</small></div><span class="tag gold">Lantai+</span></div>
+      </div></div>
+  </div>
+  <div class="grid grid-2">
+    <div class="card" id="lantaiCard"></div>
+    <div class="card"><h3>Kenapa Lantai + Bagi Naik?</h3>
+      <div class="items">
+        <div class="item"><span class="emo">🛡️</span><div class="t"><b>Harga lantai</b><small>Panen raya tidak bikin rugi — minimum ${rp(LANTAI)}/kg dijamin.</small></div></div>
+        <div class="item"><span class="emo">📈</span><div class="t"><b>Bagi naik 50%</b><small>Saat harga naik, separuh selisihnya untukmu hingga plafon ${rp(PLAFON)}.</small></div></div>
+        <div class="item"><span class="emo">🤝</span><div class="t"><b>Pembeli pasti</b><small>Lot dari Patungan Solo sudah terkumpul sebelum tanam.</small></div></div>
+      </div></div>
+  </div>${foot()}`;
+function renderLantai(){
+  const m=S.lantaiMkt,t=terima(m),min=8000,max=45000,p=((m-min)/(max-min)*100).toFixed(1),hi=Math.max(m,t,PLAFON);
+  $('#lantaiCard').innerHTML=`<div class="between"><h3>🧅 Simulasi Lantai + Bagi Naik</h3><span class="tag gold">Bawang merah</span></div>
+   <p class="sub">Geser harga acuan pasar saat panen.</p>
+   <div style="display:flex;gap:18px;align-items:flex-end;height:170px;margin:18px 4px 6px">
+     ${[['Jual bebas',m,'#E2483D'],['KunciPanen',t,'#1F8A4C']].map(([l,v,c])=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+       <b class="num" style="font-size:15px;color:${c}">${rp(v)}</b>
+       <div style="width:100%;max-width:120px;height:${v/hi*120}px;border-radius:14px 14px 6px 6px;background:${c};transition:height .5s var(--spring)"></div>
+       <small style="font-weight:700;color:var(--muted)">${l}</small></div>`).join('')}
+   </div>
+   <input type="range" class="range" id="lm" min="${min}" max="${max}" step="500" value="${m}" style="--p:${p}%" aria-label="Harga acuan">
+   <div class="between muted" style="font-size:11px;font-weight:700"><span>Panen raya ${rpS(min)}</span><span>Lonjakan ${rpS(max)}</span></div>
+   <p style="margin-top:12px;font-size:13.5px;font-weight:600;padding:12px;border-radius:14px;background:var(--bg)">${m<LANTAI?`🛡️ Harga pasar jatuh, kamu tetap menerima <b style="color:var(--green)">${rp(t)}</b> — terlindungi ${rp(t-m)}/kg.`:t<PLAFON?`📈 Harga naik — kamu dapat lantai + 50% selisih = <b style="color:var(--green)">${rp(t)}</b>/kg.`:`🔝 Mencapai plafon ${rp(PLAFON)}/kg — imbal kepastian pembeli & jadwal.`}</p>`;
+  $('#lm').oninput=e=>{S.lantaiMkt=+e.target.value;renderLantai();$('#lm').focus()};
+}
+AFTER['petani:home']=renderLantai;
+VIEWS['petani:tawaran']=()=>`
+  <section class="hello"><h2>Tawaran lot baru 🌾</h2><p>Permintaan gabungan dari outlet kuliner di Solo Raya, disalurkan lewat Agen Mitra.</p></section>
+  <div class="grid grid-3">${S.offers.map((o,i)=>{const k=K(o.k);return `<div class="card">
+    <div class="row"><span class="emo" style="width:54px;height:54px;font-size:28px">${k.e}</span><div><b style="font-size:15.5px">${k.n}</b><div class="muted" style="font-size:12.5px">${o.buyers} outlet · Patungan Solo</div></div></div>
+    <div class="items"><div class="sumrow"><span>Volume</span><b>${o.vol}</b></div><div class="sumrow"><span>Durasi</span><b>${o.dur}</b></div><div class="sumrow"><span>Ketentuan</span><b>${o.term}</b></div></div>
+    <button class="btn ${o.accepted?'ghost':''} block" style="margin-top:12px" data-acc="${i}">${o.accepted?'✓ Diterima — menunggu tanda tangan':'Terima tawaran'}</button></div>`}).join('')}</div>${foot()}`;
+AFTER['petani:tawaran']=()=>$$('[data-acc]').forEach(b=>b.onclick=()=>{const o=S.offers[+b.dataset.acc];if(o.accepted)return;o.accepted=true;b.classList.add('ghost');b.textContent='✓ Diterima — menunggu tanda tangan';toast('Tawaran diterima! Agen akan menghubungi kelompokmu.','🌱');confetti()});
+
+/* ---- Agen ---- */
+const STOPS=[['🌶️','Jemput · Poktan Sumber Makmur','Boyolali · 600 kg cabai, 300 kg bawang','04.30'],['🔍','Sortir & cek mutu','Titik kumpul Ampel · standar mutu tertulis','05.30'],['🍛','Warung Bu Sri','Laweyan · 42 kg · 4 bahan','06.40'],['☕','Kopi Senja Kotabarat','Banjarsari · 5 kg kopi','07.10'],['🥘','Katering Rasa Ibu','Jebres · 120 kg · 5 bahan','07.45'],['🥐','Roti Lumer Solo','Pasar Kliwon · 30 kg','08.20']];
+VIEWS['agen:home']=()=>`
+  <section class="hello"><h2>${greet()}, Pak Darto 🛻</h2><p>${STOPS.length} titik hari ini · volume pasti, tanpa risiko harga.</p></section>
+  <div class="grid grid-2">
+    <div class="card hero"><span class="ring a"></span><span class="ring b"></span>
+      <span class="tag dark">💰 Pendapatan minggu ini</span>
+      <div class="big num" data-count="2192000" data-rp>Rp0</div>
+      <small>Fee per kg + 80% jasa antar</small>
+      <div class="chips"><span class="tag dark">📦 1.840 kg</span><span class="tag dark">🚚 36 kiriman</span><span class="tag dark">⭐ 4,8</span></div>
+      <img class="mini-m" src="maskot.svg" alt=""></div>
+    <div class="grid pair">
+      <div class="stat card"><small>Fee per kg</small><b class="num" data-count="1472000" data-rp>0</b><span class="muted" style="font-size:12px">1.840 kg × Rp800</span></div>
+      <div class="stat card"><small>Jasa antar (80%)</small><b class="num" data-count="720000" data-rp>0</b><span class="muted" style="font-size:12px">36 × Rp25.000 × 80%</span></div>
+      <div class="stat card"><small>Kontrak dilayani</small><b class="num" data-count="14">0</b></div>
+      <div class="stat card"><small>Penyerahan tepat</small><b class="num" data-count="96" data-suf="%">0</b></div>
+    </div>
+  </div>
+  <div class="card tipcard"><img src="maskot.svg" alt=""><div><p>Rute pagi ini sudah dioptimalkan: jemput Boyolali, sortir di Ampel, lalu 4 outlet di Solo.</p><button class="btn" onclick="go('rute')">Buka rute →</button></div></div>${foot()}`;
+VIEWS['agen:rute']=()=>`
+  <section class="hello"><h2>Rute hari ini 🗺️</h2><p>Ketuk titik untuk menandai selesai.</p></section>
+  <div class="grid grid-2">
+    <div class="card"><svg class="route" viewBox="0 0 360 260">
+      <rect x="0" y="0" width="360" height="260" rx="18" fill="#F4F9F1"/>
+      <path d="M0 200 Q120 150 360 210" stroke="#DCEFD9" stroke-width="26" fill="none"/>
+      <path d="M150 0 Q170 120 120 260" stroke="#E8F2E0" stroke-width="18" fill="none"/>
+      <path id="rp" d="M40 40 C90 30 110 90 150 100 S220 70 250 120 S300 200 320 220" fill="none" stroke="#EADFC8" stroke-width="7" stroke-linecap="round"/>
+      <path d="M40 40 C90 30 110 90 150 100 S220 70 250 120 S300 200 320 220" fill="none" stroke="#1F8A4C" stroke-width="4" stroke-linecap="round" class="flow"/>
+      <g id="rnodes"></g>
+      <g id="rt"><circle r="15" fill="#0F3D2E"/><text y="5" font-size="15" text-anchor="middle">🛻</text></g>
+    </svg></div>
+    <div class="card"><div class="between"><h3>Daftar titik</h3><span class="tag" id="stc"></span></div><div class="stops" id="stops"></div></div>
+  </div>${foot()}`;
+function renderStops(){
+  $('#stops').innerHTML=STOPS.map((s,i)=>`<div class="stop ${i<S.stopsDone?'done':''}"><span class="dotx" data-st="${i}">${i<S.stopsDone?'✓':s[0]}</span><div><b>${s[1]}</b><small>${s[2]}</small></div><span class="tm">${s[3]}</span></div>`).join('');
+  $('#stc').textContent=`${S.stopsDone}/${STOPS.length} selesai`;
+  $$('[data-st]').forEach(d=>d.onclick=()=>{const i=+d.dataset.st;S.stopsDone=i<S.stopsDone?i:i+1;renderStops();truckAlong('#rp','#rt',rfrac());if(S.stopsDone===STOPS.length){toast('Semua kiriman selesai! Tagihan otomatis diperbarui.','🎉');confetti()}});
+}
+const rfrac=()=>Math.max(0,S.stopsDone-1)/(STOPS.length-1);
+AFTER['agen:rute']=()=>{
+  const p=$('#rp'),L=p.getTotalLength();
+  $('#rnodes').innerHTML=STOPS.map((st,i)=>{const pt=p.getPointAtLength(L*i/(STOPS.length-1));return `<g class="node" style="animation-delay:${i*.2}s"><circle cx="${pt.x}" cy="${pt.y}" r="13" fill="${i<2?'#E3F5EA':'#FFF0CF'}" stroke="${i<2?'#1F8A4C':'#F2B33D'}" stroke-width="3"/><text x="${pt.x}" y="${pt.y+4}" font-size="11" font-weight="800" text-anchor="middle" fill="#10261D">${i+1}</text></g>`}).join('');
+  renderStops();truckAlong('#rp','#rt',rfrac())};
+
+const foot=()=>`<p class="foot">Prototype · angka bertanda demo/asumsi untuk ilustrasi. Harga cabai, bawang merah & telur: PIHPS 6 Okt 2026. KunciPanen — Next Gen BMC 2.0 IBC 2026.</p>`;
+
+/* ================= PERAN & START ================= */
+function roleButtons(){
+  return Object.entries(ROLES).map(([k,r],i)=>`<button class="role" style="--i:${i}" data-pick-role="${k}"><span class="ic" style="background:${r.bg}">${r.e}</span><span><b>${r.name}</b><small>${r.sub}</small></span><span class="go">${S.role===k?'✓':'→'}</span></button>`).join('');
+}
+function openSheet(){$('#sheetRoles').innerHTML=roleButtons();$('#sheet').classList.add('show');
+  $$('[data-pick-role]').forEach(b=>b.onclick=()=>{$('#sheet').classList.remove('show');setRole(b.dataset.pickRole)})}
+$('#sheet').onclick=e=>{if(e.target.id==='sheet')$('#sheet').classList.remove('show')};
+$('#roleBtn').onclick=openSheet;$('#sbRole').onclick=openSheet;
+$('#bell').onclick=()=>toast(S.role==='kuliner'?'Kiriman Kamis 06.00 sudah dijadwalkan.':S.role==='petani'?'Tawaran lot cabai baru dari 23 outlet.':'Rute pagi siap — 6 titik.','🔔');
+function setRole(r){S.role=r;buildNav();go('home');toast(`Masuk sebagai ${ROLES[r].name}`,ROLES[r].e)}
+$$('#onboard [data-role]').forEach(b=>b.onclick=()=>{
+  $('#onboard').classList.add('hide');$('#app').classList.add('on');S.role=b.dataset.role;buildNav();go('home');
+  setTimeout(()=>toast('Selamat datang di KunciPanen!','🔒'),500);
+});
+addEventListener('resize',movePill);
+addEventListener('keydown',e=>{if(e.key==='Escape'){$('#lockModal').classList.remove('show');$('#sheet').classList.remove('show')}});
+setTimeout(()=>$('#splash').classList.add('hide'),reduce?200:2300);
+if(location.hash==='#app'){$('#onboard').classList.add('hide');$('#app').classList.add('on');buildNav();go('home')}
+</script>
+</body>
+</html>
